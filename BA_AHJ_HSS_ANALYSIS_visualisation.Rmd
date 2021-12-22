@@ -1,0 +1,549 @@
+---
+title: "BA ANALYSIS"
+author: "Andreas & Helle"
+date: "11/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Load packages
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(effects)
+library(emmeans)
+library(ggplot2)
+```
+
+Load data
+
+```{r}
+df <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_full_nodupsWdemo.csv")
+
+df_ds <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_downsampledHelle.csv")
+
+df_ds$Correct <- as.factor(df_ds$Correct)
+df_ds$NativeLanguage <- as.factor(df_ds$NativeLanguage)
+df_ds$Language <- as.factor(df_ds$Language)
+df_ds$SubjectID <- as.factor(df_ds$SubjectID)
+df_ds$Nonword <- as.factor(df_ds$Nonword)
+df_ds$NumberSyllables <- as.numeric(df_ds$NumberSyllables)
+
+df$Correct <- as.factor(df$Correct)
+df$NativeLanguage <- as.factor(df$NativeLanguage)
+df$Language <- as.factor(df$Language)
+df$SubjectID <- as.factor(df$SubjectID)
+df$Nonword <- as.factor(df$Nonword)
+df$NumberSyllables <- as.numeric(df$NumberSyllables)
+```
+
+
+Hypothesis 1
+
+```{r}
+# ds test
+
+# We make the dataset with only danish words for the danes and norwegian words for the norwegians
+dfh1ds <- df_ds %>% 
+  filter((NativeLanguage == "Danish" & Language == "D") |
+         (NativeLanguage == "Norwegian" & Language == "N") )
+
+
+# The model:
+
+mh1ds <- lme4::glmer(Correct ~ NativeLanguage + (1 | SubjectID) + (1 | Nonword), family = binomial, data = dfh1ds)
+
+summary(mh1ds)  # No significant effect of Native Language
+
+
+
+
+# full data test
+
+# We make the dataset with only danish words for the danes and norwegian words for the norwegians
+dfh1full <- df %>% 
+  filter((NativeLanguage == "Danish" & Language == "D") |
+         (NativeLanguage == "Norwegian" & Language == "N") )
+
+dfh1full$Correct <- as.factor(dfh1full$Correct)
+
+# The model:
+
+mh1full <- lme4::glmer(Correct ~ NativeLanguage + (1 | SubjectID) + (1 | Nonword), family = binomial, data = dfh1full)
+
+summary(mh1full) # Significantly lower probability of repeating correctly for the NNL group, beta = -2.0093, SE = 0.5522, z = -3.639, p < .001.
+
+boot::inv.logit(0.1459)
+# Prob Danes: 0.536
+boot::inv.logit(0.1459-2.0093)
+# Prob Norws: 0.134
+
+```
+
+
+
+Hypothesis 2
+
+
+```{r}
+# ds test
+
+mh2ds <- lme4::glmer(Correct ~ NumberSyllables + (1 | Nonword) + (1 + NumberSyllables | SubjectID), family = binomial, data = df_ds)
+
+summary(mh2ds)
+# The effect of number of syllables is significant with lower prob of answering correctly for higher numbers of syllables
+# beta = -0.67504, SE = 0.07411, z = -9.108, p < .001
+
+
+
+# full data test
+
+mh2full <- lme4::glmer(Correct ~ NumberSyllables + (1 | Nonword) + (1 + NumberSyllables | SubjectID), family = binomial, data = df)
+
+summary(mh2full) 
+# The effect of number of syllables is significant with lower prob of answering correctly for higher numbers of syllables
+# beta = -0.6569, SE = 0.0710, z = -9.252, p < .001
+
+```
+
+
+Hypothesis 3
+
+```{r}
+# ds test
+
+mh3ds.1 <- glmer(Correct ~ NativeLanguage * Language + LvlFremmedsprogDKNO + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = df_ds, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+# A model without LvlFremmedsprog as fixed effect. Created to see only the diff between Danish E and Norwegian E.
+testmh3ds.1 <- glmer(Correct ~ NativeLanguage * Language + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = df_ds, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+#mh3ds.2 <- glmer(Correct ~ NativeLanguage * Language + LvlFremmedsprogDKNO + Trialnumber + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = df_ds, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+AIC(mh3ds.1, mh3ds.2)
+
+summary(mh3ds.1)
+
+summary(emmeans(mh3ds.1, c("NativeLanguage", "Language"), contr = "revpairwise"), infer = TRUE)$contrast
+
+# The contrast for Danish N - Danish D (DeltaPi for the DNL group) was not significant. We did not expect the DeltaPi to be significant for the NNL group, but it makes little sense to evaluate whether the DeltaPi is bigger for the DNL group, when it is not significant in itself.
+
+# contrast                  estimate    SE  df asymp.LCL asymp.UCL z.ratio p.value
+# Danish N - Danish D        -0.4923 0.400 Inf   -1.6326    0.6480  -1.230  0.8221
+# Norwegian N - Norwegian D   0.7150 0.400 Inf   -0.4250    1.8551   1.787  0.4739
+
+# Summary of model without 
+summary(emmeans(testmh3ds.1, c("NativeLanguage", "Language"), contr = "revpairwise"), infer = TRUE)$contrast
+summary(emmeans(testmh3ds.1, c("NativeLanguage", "Language"), contr = "revpairwise"), infer = TRUE)$emmeans
+
+
+
+
+
+# full data test
+
+mh3full <- glmer(Correct ~ NativeLanguage * Language + LvlFremmedsprogDKNO + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = df, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+summary(mh3full)
+
+summary(emmeans(mh3full, c("NativeLanguage", "Language"), contr = "revpairwise"), infer = TRUE)$contrast
+
+
+
+# The contrast for Danish N - Danish D (DeltaPi for the DNL group) was not significant. We did not expect the DeltaPi to be significant for the NNL group, but it makes little sense to evaluate whether the DeltaPi is bigger for the DNL group, when it is not significant in itself.
+
+# contrast                  estimate    SE  df asymp.LCL asymp.UCL z.ratio p.value
+# Danish N - Danish D        -0.4662 0.403 Inf    -1.615     0.682  -1.157  0.8574
+# Norwegian N - Norwegian D   0.8496 0.408 Inf    -0.312     2.012   2.083  0.2959
+# Norwegian E - Danish E     -3.1533 0.377 Inf    -4.228    -2.079  -8.365  <.0001
+
+# It was here we also found, that Danes were better in English than Norwegians.
+# But there was no significant differences between performance on own language and English for either of the two NL groups.
+
+summary(emmeans(mh3full, c("NativeLanguage", "Language"), contr = "revpairwise"), infer = TRUE)$emmeans
+# Danish E prob: 0.703
+# Norwegin E prob: 0.092
+
+
+# Same models, only 3 and 4 syllables
+
+# Downsampled dataset
+
+dfh3ds <- df_ds %>% filter(NumberSyllables == 3 | NumberSyllables == 4)
+
+mh3ds.3 <- glmer(Correct ~ Language*NativeLanguage + LvlFremmedsprogDKNO + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = dfh3ds, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+summary(mh3ds.3)
+
+plot(effects::allEffects(mh3ds.3))
+
+summary(emmeans(mh3ds.3, c("NativeLanguage", "Language"), contr = "revpairwise"), infer = TRUE)$contrast
+
+# Danish E - Danish D is not significant
+# Norwegian N - Norwegian E is not significant either,
+# But from the look of the plot, there might be some pattern in support of possibility B, when the data is simplified to lower numbers of syllables (so focusing on the simple part of the task).
+
+
+# Model with no intercept
+
+mh3ds.3NoInt <- glmer(Correct ~ 0 + Language*NativeLanguage + LvlFremmedsprogDKNO + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = dfh3ds, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+summary(mh3ds.3NoInt)
+
+
+# Full dataset
+
+dfh3full <- df %>% filter(NumberSyllables == 3 | NumberSyllables == 4)
+
+mh3full.3 <- glmer(Correct ~ Language*NativeLanguage + LvlFremmedsprogDKNO + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = dfh3full, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+summary(mh3full.3)
+
+plot(effects::allEffects(mh3full.3))
+
+summary(emmeans(mh3full.3, c("NativeLanguage", "Language"), contr = "revpairwise"), infer = TRUE)$contrast
+
+# Danish E - Danish D not significant
+# Norwegian N - Norwegian E not significant
+
+```
+
+
+Hypothesis 4
+
+```{r}
+# ds test
+
+mh4ds <- glmer(Correct ~ NativeLanguage * Language * as.factor(NumberSyllables) + LvlFremmedsprogDKNO + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = df_ds, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+summarymh4dscont <- summary(emmeans(mh4ds, c("NativeLanguage", "Language", "NumberSyllables"), contr = "revpairwise"), infer = TRUE)$contrast
+
+summarymh4dscont <- summarymh4dscont %>% filter(!is.na(estimate))
+
+summarymh4dsest <- summary(emmeans(mh4ds, c("NativeLanguage", "Language", "NumberSyllables"), contr = "revpairwise"), infer = TRUE)$emmeans
+
+summarymh4dsest <- summarymh4dsest %>% filter(!is.na(emmean))
+
+
+# There are none of the DeltaPi's at any number of syllables for the Danes that are significant.
+# So again, does not make sense to ask "is this difference larger than the corresponding one for the norwegians".
+
+
+# full data test
+
+mh4full <- glmer(Correct ~ NativeLanguage * Language * as.factor(NumberSyllables) + LvlFremmedsprogDKNO + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = df, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+summarymh4fullcont <- summary(emmeans(mh4full, c("NativeLanguage", "Language", "NumberSyllables"), contr = "revpairwise"), infer = TRUE)$contrast
+
+summarymh4fullcont <- summarymh4fullcont %>% filter(!is.na(estimate))
+
+summarymh4fullest <- summary(emmeans(mh4full, c("NativeLanguage", "Language", "NumberSyllables"), contr = "revpairwise"), infer = TRUE)$emmeans
+
+summarymh4fullest <- summarymh4fullest %>% filter(!is.na(emmean))
+
+
+
+```
+
+
+
+Data visualisations:
+
+
+Results H1,
+
+
+```{r}
+# Plot of raw data
+
+ploth1full <- dfh1full %>% na.omit() %>% ggplot(aes(x = NativeLanguage, y = Correct, fill = NativeLanguage))+
+  geom_bar(stat = 'summary', fun.y = mean) +
+  geom_errorbar(stat = "summary", fun.data = mean_se , width=0.5)
+
+ploth1full
+
+
+
+# Plot of model estimates
+
+plot(effects::allEffects(mh1ds))
+plot(effects::allEffects(mh1full))
+
+# Full data
+
+# Save effects as a dataframe:
+
+efh1full <- effect(term = "NativeLanguage", mod = mh1full)
+
+efh1full <- as.data.frame(efh1full)
+
+plotefh1full <- ggplot(efh1full, aes(x = NativeLanguage, y = fit, ymin = fit-se, ymax = fit+se, colour = NativeLanguage)) +
+  ylim(0,1) +
+  geom_point(size = 3.5, shape = "circle") +
+  geom_errorbar(width = 0.15, size = 1) +
+  #geom_line(size = 1) +
+  theme_minimal() +
+  xlab("Native Language") +
+  ylab("Probability of Correct Repetition") +
+  ggtitle("Full Dataset")
+
+
+# Downsamped data
+
+# Save effects as a dataframe:
+
+
+efh1ds <- effect(term = "NativeLanguage", mod = mh1ds)
+
+efh1ds <- as.data.frame(efh1ds)
+
+plotefh1ds <- ggplot(efh1ds, aes(x = NativeLanguage, y = fit, ymin = fit-se, ymax = fit+se, colour = NativeLanguage)) +
+  ylim(0,1) +
+  #theme(legend.title = "Native Language") +
+  geom_point(size = 3.5, shape = "circle") +
+  geom_errorbar(width = 0.15, size = 1) +
+  #geom_line(size = 1) +
+  theme_minimal() +
+  xlab("Native Language") +
+  ylab("Probability of Correct Repetition") +
+  ggtitle("Downsampled Dataset")
+
+
+plotefh1ds + plotefh1full
+
+
+
+
+```
+
+
+
+
+
+
+Results H2:
+
+```{r}
+
+
+# DS results:
+
+df_ds$Correct <- as.numeric(as.character(df_ds$Correct))
+
+ploth2ds <- ggplot(df_ds, aes(x = NumberSyllables, y = Correct)) +
+  ylim(0,1) +
+  #geom_point(position = "jitter", alpha = 1/10) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial")) +
+  theme_minimal() +
+  xlab("Number of Syllables") +
+  ylab("Probability of Correct Repetition") +
+  ggtitle("Downsampled Dataset")
+  
+  
+
+# Full data results
+
+df$Correct <- as.numeric(as.character(df$Correct))
+
+ploth2full <- ggplot(df, aes(x = NumberSyllables, y = Correct)) +
+  ylim(0,1) +
+  #geom_point(position = "jitter", alpha = 1/10) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial")) +
+  theme_minimal() +
+  xlab("Number of Syllables") +
+  ylab("Probability of Correct Repetition") +
+  ggtitle("Full Dataset")
+
+library(patchwork)
+
+ploth2ds + ploth2full
+
+plot(effects::allEffects(mh2ds))
+
+
+```
+
+
+
+
+
+Exploratory:
+
+Danes better in English than Norwegians:
+```{r}
+# To see the effect:
+plot(effects::allEffects(mh3full))
+
+# Downsampled data
+
+efh3ds <- effect(term = "NativeLanguage*Language", mod = mh3ds.1)
+
+efh3ds <- as.data.frame(efh3ds)
+
+efh3ds <- efh3ds %>% filter(Language == "E")
+
+plotefh3ds <- ggplot(efh3ds, aes(x = NativeLanguage, y = fit, ymin = fit-se, ymax = fit+se, colour = NativeLanguage)) +
+  ylim(0,1) +
+  #theme(legend.position = "none") +
+  geom_point(size = 3.5, shape = "circle") +
+  geom_errorbar(width = 0.15, size = 1) +
+  #geom_line(size = 1) +
+  theme_minimal() +
+  xlab("Native Language") +
+  ylab("Probability of Correct Repetition") +
+  ggtitle("Downsampled Dataset")
+
+
+# Full data
+
+efh3full <- effect(term = "NativeLanguage*Language", mod = mh3full)
+
+efh3full <- as.data.frame(efh3full)
+
+efh3full <- efh3full %>% filter(Language == "E")
+
+plotefh3full <- ggplot(efh3full, aes(x = NativeLanguage, y = fit, ymin = fit-se, ymax = fit+se, colour = NativeLanguage)) +
+  ylim(0,1) +
+  #theme(legend.position = "none") +
+  geom_point(size = 3.5, shape = "circle") +
+  geom_errorbar(width = 0.15, size = 1) +
+  #geom_line(size = 1) +
+  theme_minimal() +
+  xlab("Native Language") +
+  ylab("Probability of Correct Repetition") +
+  ggtitle("Full Dataset")
+
+
+plotefh3ds + plotefh3full
+
+
+
+# Making a models and plots using only english non-word data:
+
+
+#downsampled data
+english <- df_ds %>% filter(Language == "E")
+
+
+menglish <- glmer(Correct ~ NativeLanguage + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), 
+             data = english, family = binomial, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+
+summary(menglish)
+
+
+eng_ef <- effect(term = "NativeLanguage", mod = menglish)
+
+eng_ef <- as.data.frame(eng_ef)
+
+
+plot_english <- ggplot(eng_ef, aes(x = NativeLanguage, y = fit, ymin = fit-se, ymax = fit+se, colour = NativeLanguage, group = 1)) +
+  ylim(0,1) +
+  geom_point(size = 3.5, shape = "circle") +
+  geom_errorbar(width = 0.15, size = 1) +
+  #geom_line(size = 0.5, color = "black") +
+  theme_minimal() + 
+  #facet_wrap(.~NativeLanguage)+
+  xlab("Native Language") +
+  ylab("Probability of Correct Repetition") 
+  #ggtitle("Full Dataset")
+
+
+plot_english
+
+
+
+
+
+full_english <- df %>% filter(Language == "E")
+
+
+mfullenglish <- glmer(Correct ~ NativeLanguage + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), 
+             data = full_english, family = binomial, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+
+summary(mfullenglish)
+
+
+eng_ef_full <- effect(term = "NativeLanguage", mod = mfullenglish)
+
+eng_ef_full <- as.data.frame(eng_ef_full)
+
+
+plot_english_full <- ggplot(eng_ef_full, aes(x = NativeLanguage, y = fit, ymin = fit-se, ymax = fit+se, colour = NativeLanguage, group = 1)) +
+  ylim(0,1) +
+  geom_point(size = 3.5, shape = "circle") +
+  geom_errorbar(width = 0.15, size = 1) +
+  #geom_line(size = 0.5, color = "black") +
+  theme_minimal() + 
+  #facet_wrap(.~NativeLanguage)+
+  xlab("Native Language") +
+  ylab("Probability of Correct Repetition") 
+  #ggtitle("Full Dataset")
+
+
+plot_english + plot_english_full
+
+
+
+```
+
+
+H3 tested on only 3 and 4 syllables
+
+```{r}
+#ds data
+efh3dsint <- effect(term = "Language*NativeLanguage", mod = mh3ds.3)
+
+efh3dsint <- as.data.frame(efh3dsint)
+
+
+plotefh3dsint <- ggplot(efh3dsint, aes(x = Language, y = fit, ymin = fit-se, ymax = fit+se, colour = NativeLanguage, group = 1)) +
+  ylim(0,1) +
+  geom_point(size = 3.5, shape = "circle") +
+  geom_errorbar(width = 0.15, size = 1) +
+  geom_line(size = 0.5, color = "black") +
+  theme_minimal() + 
+  facet_wrap(.~NativeLanguage)+
+  xlab("Native Language") +
+  ylab("Probability of Correct Repetition") +
+  ggtitle("Downsampled Dataset")
+
+
+plotefh3dsint
+
+#full data 
+
+efh3fullint <- effect(term = "Language*NativeLanguage", mod = mh3full.3)
+
+efh3fullint <- as.data.frame(efh3fullint)
+
+
+plotefh3fullint <- ggplot(efh3fullint, aes(x = Language, y = fit, ymin = fit-se, ymax = fit+se, colour = NativeLanguage, group = 1)) +
+  ylim(0,1) +
+  geom_point(size = 3.5, shape = "circle") +
+  geom_errorbar(width = 0.15, size = 1) +
+  geom_line(size = 0.5, color = "black") +
+  theme_minimal() + 
+  facet_wrap(.~NativeLanguage)+
+  xlab("Native Language") +
+  ylab("Probability of Correct Repetition") +
+  ggtitle("Full Dataset")
+
+
+plotefh3dsint+ plotefh3fullint
+
+
+
+```
+
+
+
+
+
+

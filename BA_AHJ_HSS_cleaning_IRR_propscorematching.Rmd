@@ -1,0 +1,1462 @@
+---
+title: "Bachelor Data Analysis"
+author: "Andreas & Helle"
+date: "10/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+*BEFORE THE ANALYSIS*
+
+```{r}
+library(tidyverse)
+library(purrr)
+library(readr)
+library(stringr)
+library(readxl)
+library(ggplot2)
+```
+
+
+Write a function for reading files of each of the six coders
+
+```{r Reading functions}
+# Function for And's files
+
+read_files_and <- function(filename) {
+  #read data
+  data <- read.csv(file = filename)
+  
+  # Create coder column
+  data <- data %>% 
+    mutate(
+      Rater = "and"
+    ) %>% 
+    rename(Trialnumber = X)
+  
+  # Set the class of all columns:
+  data$Trialnumber <- as.numeric(data$Trialnumber)
+  data$SubjectID <- as.factor(data$SubjectID)
+  data$NativeLanguage <- as.factor(data$NativeLanguage)
+  data$Nonword <- as.factor(data$Nonword)
+  data$NumberSyllables <- as.factor(data$NumberSyllables)
+  data$Language <- as.factor(data$Language)
+  data$TrialTime <- as.numeric(data$TrialTime)
+  data$TimeSinceStart <- as.numeric(data$TimeSinceStart)
+  data$Correct <- as.factor(data$Correct)
+  data$Transcription <- as.character(data$Transcription)
+  data$Rater <- as.factor(data$Rater)
+  
+  # select all but the first row (which is just row numbers):
+  data <- data %>% 
+    select(
+      Trialnumber,
+      SubjectID,
+      NativeLanguage,
+      Nonword,
+      NumberSyllables,
+      Language,
+      TrialTime,
+      TimeSinceStart,
+      Correct,
+      Transcription,
+      Rater
+    )
+  
+  return(data)
+}
+
+
+# Dev function
+
+
+read_files_dev <- function(filename) {
+  #read data
+  data <- read.csv(file = filename, sep = ";")
+  
+  # Create coder column
+  data <- data %>% 
+    mutate(
+      Rater = "dev"
+    )
+  
+  data$Trialnumber <- data[,1]
+  
+  # Set the class of all columns:
+  data$Trialnumber <- as.numeric(data$Trialnumber)
+  data$SubjectID <- as.factor(data$SubjectID)
+  data$NativeLanguage <- as.factor(data$NativeLanguage)
+  data$Nonword <- as.factor(data$Nonword)
+  data$NumberSyllables <- as.factor(data$NumberSyllables)
+  data$Language <- as.factor(data$Language)
+  data$TrialTime <- as.numeric(data$TrialTime)
+  data$TimeSinceStart <- as.numeric(data$TimeSinceStart)
+  data$Correct <- as.factor(data$Correct)
+  data$Transcription <- as.character(data$Transcription)
+  data$Rater <- as.factor(data$Rater)
+  
+  # select relevant columns
+  data <- data %>% 
+    select(
+      Trialnumber,
+      SubjectID,
+      NativeLanguage,
+      Nonword,
+      NumberSyllables,
+      Language,
+      TrialTime,
+      TimeSinceStart,
+      Correct,
+      Transcription,
+      Rater
+    )
+  
+  return(data)
+}
+
+
+# Hel function
+
+
+read_files_hel <- function(filename) {
+  #read data
+  data <- read.csv(file = filename)
+  
+  # Create coder column and rename trialno col
+  data <- data %>% 
+    mutate(
+      Rater = "hel"
+    ) %>% 
+    rename(
+      Trialnumber = X
+    )
+  
+  # Set the class of all columns:
+  data$Trialnumber <- as.numeric(data$Trialnumber)
+  data$SubjectID <- as.factor(data$SubjectID)
+  data$NativeLanguage <- as.factor(data$NativeLanguage)
+  data$Nonword <- as.factor(data$Nonword)
+  data$NumberSyllables <- as.factor(data$NumberSyllables)
+  data$Language <- as.factor(data$Language)
+  data$TrialTime <- as.numeric(data$TrialTime)
+  data$TimeSinceStart <- as.numeric(data$TimeSinceStart)
+  data$Correct <- as.factor(data$Correct)
+  data$Transcription <- as.character(data$Transcription)
+  data$Rater <- as.factor(data$Rater)
+  
+  # select relevant columns
+  data <- data %>% 
+    select(
+      Trialnumber,
+      SubjectID,
+      NativeLanguage,
+      Nonword,
+      NumberSyllables,
+      Language,
+      TrialTime,
+      TimeSinceStart,
+      Correct,
+      Transcription,
+      Rater
+    )
+  
+  return(data)
+}
+
+
+# MM function
+
+
+read_files_mm <- function(filename) {
+  #read data
+  data <- read_excel(path = filename, col_names = TRUE)
+  
+  # Create coder column
+  data <- data %>% 
+    mutate(
+      Rater = "mm"
+    ) %>% 
+    rename(
+      Trialnumber = ...1
+    )
+  # Create Correct col based on NA's in Transciption col
+  data$Correct <- ifelse(is.na(data$Transcription), 1, 0)
+  
+  # Set the class of all columns:
+  data$Trialnumber <- as.numeric(data$Trialnumber)
+  data$SubjectID <- as.factor(data$SubjectID)
+  data$NativeLanguage <- as.factor(data$NativeLanguage)
+  data$Nonword <- as.factor(data$Nonword)
+  data$NumberSyllables <- as.factor(data$NumberSyllables)
+  data$Language <- as.factor(data$Language)
+  data$TrialTime <- as.numeric(data$TrialTime)
+  data$TimeSinceStart <- as.numeric(data$TimeSinceStart)
+  data$Correct <- as.factor(data$Correct)
+  data$Transcription <- as.character(data$Transcription)
+  data$Rater <- as.factor(data$Rater)
+  
+  
+  # select relevant columns
+  data <- data %>% 
+    select(
+      Trialnumber,
+      SubjectID,
+      NativeLanguage,
+      Nonword,
+      NumberSyllables,
+      Language,
+      TrialTime,
+      TimeSinceStart,
+      Correct,
+      Transcription,
+      Rater
+    )
+  
+  return(data)
+}
+
+
+
+# Seb function
+
+
+read_files_seb <- function(filename) {
+  # read data
+  data <- read.csv(file = filename)
+  
+  # Create coder column and rename trialno col
+  data <- data %>% 
+    mutate(
+      Rater = "seb"
+    ) %>% 
+    rename(
+      Trialnumber = X
+    )
+  
+  # Set the class of all columns:
+  data$Trialnumber <- as.numeric(data$Trialnumber)
+  data$SubjectID <- as.factor(data$SubjectID)
+  data$NativeLanguage <- as.factor(data$NativeLanguage)
+  data$Nonword <- as.factor(data$Nonword)
+  data$NumberSyllables <- as.factor(data$NumberSyllables)
+  data$Language <- as.factor(data$Language)
+  data$TrialTime <- as.numeric(data$TrialTime)
+  data$TimeSinceStart <- as.numeric(data$TimeSinceStart)
+  data$Correct <- as.factor(data$Correct)
+  data$Transcription <- as.character(data$Transcription)
+  data$Rater <- as.factor(data$Rater)
+  
+  # Fix small cases and - instead of . in transcription col
+  data$Transcription <- toupper(data$Transcription)
+  data$Transcription <- gsub("-", ".", data$Transcription)
+  
+  # select relevant columns
+  data <- data %>% 
+    select(
+      Trialnumber,
+      SubjectID,
+      NativeLanguage,
+      Nonword,
+      NumberSyllables,
+      Language,
+      TrialTime,
+      TimeSinceStart,
+      Correct,
+      Transcription,
+      Rater
+    )
+  
+  return(data)
+}
+
+
+
+# Shi function
+
+read_files_shi <- function(filename) {
+  # load data
+  data <- read_excel(path = filename, col_names = T, skip = 1)
+  
+  #Make rater column
+  data <- data %>%  
+    mutate(Rater = "shi",
+           Trialnumber = 1:96)
+  
+  
+  # Create Correct col based on NA's in Transciption col
+  data$Correct <- ifelse(is.na(data$Transcription), 1, 0)
+ 
+  # changing columns to the correct format: 
+  data$SubjectID <- as.factor(data$SubjectID)
+  data$NativeLanguage <- as.factor(data$NativeLanguage)
+  data$Nonword <- as.factor(data$Nonword)
+  data$NumberSyllables <- as.factor(data$NumberSyllables)
+  data$Language <- as.factor(data$Language)
+  data$TrialTime <- as.numeric(data$TrialTime)
+  data$TimeSinceStart <- as.numeric(data$TimeSinceStart)
+  data$Correct <- as.factor(data$Correct)
+  data$Transcription <- as.character(data$Transcription)
+  data$Rater <- as.factor(data$Rater)
+  
+  
+  
+   # select relevant columns
+  data <- data %>% 
+    select(
+      Trialnumber,
+      SubjectID,
+      NativeLanguage,
+      Nonword,
+      NumberSyllables,
+      Language,
+      TrialTime,
+      TimeSinceStart,
+      Correct,
+      Transcription,
+      Rater
+    )
+  
+  #Return data
+  return(data)
+  
+}
+
+
+
+```
+
+A chunk for testing some functions:
+```{r Tests af funktioner}
+# read and data test
+test_and <- read.csv(file = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_And/Alog_subjD_1_001.csv")
+
+test_and <- read_files_and("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_And/Alog_subjD_6_062.csv")
+
+
+# Read mm data test
+test_xlsx <- read_excel(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/D_4_068.xlsx", col_names = TRUE)
+
+test_xlsx$Correct <- ifelse(is.na(test_xlsx$Transcription), 1, 0)
+
+test_xlsx$Correct <- ifelse(test_xlsx$Correct == "", 1, test_xlsx$Correct)
+
+x <- test_xlsx[1,9]
+
+files <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_And" , pattern = "*.csv", all.files = FALSE, full.names = TRUE)
+
+files_dev <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Dev" , pattern = "*.csv", all.files = FALSE, full.names = TRUE)
+
+
+for (i in files_dev) {
+  i <- read_files_dev(i)
+}
+
+and_data <- files %>% 
+  purrr::map_df(read_files_and)
+
+
+dev_test <- read.csv(file = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Dev/N_1_25.csv", sep = ";")
+
+dev_data <- files_dev %>% 
+  purrr::map_df(read_files_dev)
+
+
+files_hel <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Hel" , pattern = "*.csv", all.files = FALSE, full.names = TRUE)
+
+hel_data <- files_hel %>% 
+  purrr::map_df(read_files_hel)
+
+
+for (i in files_hel) {
+  file <- i
+  hel_data <- read_files_hel
+}
+
+dumhelle <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Hel/Hlog_subjD_8_080.csv")
+
+files_mm <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_MM" , pattern = "*.xlsx", all.files = FALSE, full.names = TRUE)
+
+mm_data <- files_mm %>% 
+  purrr::map_df(read_files_mm)
+
+for (i in files_mm) {
+  file <- i
+  mm_data <- read_files_mm(i)
+}
+
+mm_test <- read_files_mm("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_MM/D_5_085.xlsx")
+
+mm_test2 <- read_excel("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_MM/D_5_085.xlsx")
+
+mm_test2$Correct <- ifelse(is.na(mm_test2$Transciption), 1, 0)
+
+
+seb_test <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Seb/log_subjD_1_001.csv")
+
+seb_test$Transcription <- toupper(seb_test$Transcription)
+
+seb_test$Transcription <- gsub("-", ".", seb_test$Transcription)
+
+seb_test$Transcription <- noquote(seb_test$Transcription)
+
+files_seb <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Seb" , pattern = "*.csv", all.files = FALSE, full.names = TRUE)
+
+seb_data <- files_seb %>% 
+  purrr::map_df(read_files_seb)
+
+for (i in files_seb) {
+  file <- i
+  seb_data <- read_files_seb(i)
+}
+
+
+files_shi <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Shi" , pattern = "*.xlsx", all.files = FALSE, full.names = TRUE)
+
+shi_data <- files_shi %>% 
+  purrr::map_df(read_files_shi)
+
+for (i in files_shi) {
+  file <- i
+  shi_data <- read_files_shi(i)
+}
+
+```
+
+
+
+Load the data, and bind it together!
+
+```{r}
+# And data
+
+files_and <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_And" , pattern = "*.csv", all.files = FALSE, full.names = TRUE)
+
+and_data <- files_and %>% 
+  purrr::map_df(read_files_and)
+
+
+# Dev data
+
+files_dev <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Dev" , pattern = "*.csv", all.files = FALSE, full.names = TRUE)
+
+dev_data <- files_dev %>% 
+  purrr::map_df(read_files_dev)
+
+
+# Hel data
+
+files_hel <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Hel" , pattern = "*.csv", all.files = FALSE, full.names = TRUE)
+
+hel_data <- files_hel %>% 
+  purrr::map_df(read_files_hel)
+
+
+# MM data
+
+files_mm <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_MM" , pattern = "*.xlsx", all.files = FALSE, full.names = TRUE)
+
+mm_data <- files_mm %>% 
+  purrr::map_df(read_files_mm)
+
+
+# Seb data
+
+files_seb <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Seb" , pattern = "*.csv", all.files = FALSE, full.names = TRUE)
+
+seb_data <- files_seb %>% 
+  purrr::map_df(read_files_seb)
+
+
+# Shi data
+
+files_shi <- list.files(path = "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Coded_logfiles_Shi" , pattern = "*.xlsx", all.files = FALSE, full.names = TRUE)
+
+shi_data <- files_shi %>% 
+  purrr::map_df(read_files_shi)
+
+
+
+# ALL data:
+
+data <- rbind(and_data, dev_data, hel_data, mm_data, seb_data, shi_data)
+
+write.csv(data, "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_full.csv")
+
+```
+
+Well done!
+
+You can quickly load the full df here:
+```{r}
+df <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_full.csv")
+
+
+## Some extra cleaning
+
+df$Correct <- ifelse(df$Correct == "[NA]", NA, df$Correct)
+df$Correct <- ifelse(df$Correct == 11, 1, df$Correct)
+
+df$Transcription <- ifelse(df$Correct == "NI.CHOI.TAU.VUF", df$Correct, df$Transcription)
+df$Transcription <- ifelse(df$Correct == "LA.TU.TAL.HYT.MAT", df$Correct, df$Transcription)
+df$Transcription <- ifelse(df$Correct == "DI.E.LAN.TIF", df$Correct, df$Transcription)
+df$Transcription <- ifelse(df$Correct == "CHI.NOI.TOP", df$Correct, df$Transcription)
+
+df$Correct <- ifelse(df$Correct == "NI.CHOI.TAU.VUF", 0, df$Correct)
+df$Correct <- ifelse(df$Correct == "LA.TU.TAL.HYT.MAT", 0, df$Correct)
+df$Correct <- ifelse(df$Correct == "DI.E.LAN.TIF", 0, df$Correct)
+df$Correct <- ifelse(df$Correct == "CHI.NOI.TOP", 0, df$Correct)
+
+```
+
+
+
+
+We also need to clean the demographic data:
+
+```{r}
+# load the data
+demo <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/Baggrundsskema_HelleAndreas_NWR3.csv")
+
+# Rename relevant columns:
+
+demo <- demo %>% 
+  rename(
+    SubjectID = Subjekt.ID,
+    Gender = Er.du.,
+    HighestEducation = Hvilket.niveau.er.din.h.jst.afsluttede.uddannelse.pŒ.,
+    UnderUddannelse = Hvis.du.er.under.uddannelse..hvilket.niveau.er.den.sŒ.pŒ.,
+    Ordblindhed = Er.du.nogensinde.blevet.diagnosticeret.med.l.sevanskeligheder..fx.dysleksi.ordblindhed..,
+    AgeAtDiagnosis = Ñ.hvis.ja..hvor.gammel.var.du..da.du.fik.diagnosen.,
+    Hørevanskeligheder = Har.du.h.revanskeligheder.nedsat.h.relse.tinnitus.,
+    Fødeby = Hvilken.by.er.du.f.dt.i.,
+    RegionLængstTid = I.hvilken.region.har.du.boet.l.ngst.tid.,
+    Dialekt = Hvis.du.skulle.v.lge.den.dialekt..der.mest.minder.om.den.mŒde..du.taler.pŒ..hvad.ville.det.sŒ.v.re.,
+    Bilingual = Er.du.vokset.op.med.flere.modersmŒl.end.dansk.norsk...Dvs..du.brugte.andre.sprog.end.dansk.fra.du.var.under.5.Œr.,
+    Andetsprog = Ñ.hvis.ja..hvilke.t..sprog.var.de.t..,
+    LvlFremmedsprogDKNO = PŒ.en.skala.mellem.1.og.7..hvor.godt.kan.du.sŒ.tale.det.andet.sprog..norsk.for.dansker..dansk.for.nordm.nd....Hvor.1...kan.slet.ikke.tale.norsk..og.7...taler.norsk.pŒ.modersmŒlsniveau.
+  )
+
+# Change some languages for gender:
+
+demo$Gender <- ifelse(demo$Gender == "Kvinde" | demo$Gender == "Kvinne", "Female", demo$Gender)
+
+demo$Gender <- ifelse(demo$Gender == "Mand" | demo$Gender == "Mann", "Male", demo$Gender)
+
+demo$Gender <- ifelse(demo$Gender == "Andet", "Other", demo$Gender)
+
+demo$Gender <- ifelse(demo$Gender == "¯nsker ikke Œ svare", "Do not wish to answer", demo$Gender)
+
+
+# language for ordblindhed
+demo$Ordblindhed <- ifelse(demo$Ordblindhed == "Ja", "Yes", "No")
+
+# Ændr "15 eller 16" til 15
+demo$AgeAtDiagnosis <- ifelse(demo$AgeAtDiagnosis == "15 eller 16", 15, demo$AgeAtDiagnosis)
+
+
+# language of hørevanskeligheder
+demo$Hørevanskeligheder <- ifelse(demo$Hørevanskeligheder == "Ja", "Yes", "No")
+
+
+
+# Change weird symbols in Fødeby col
+demo$Fødeby <- gsub("¿", "ø", demo$Fødeby)
+demo$Fødeby <- gsub("", "Å", demo$Fødeby)
+demo$Fødeby <- gsub("¾", "æ", demo$Fødeby)
+demo$Fødeby <- gsub("6000 ", "", demo$Fødeby)
+
+
+# Same for regioner
+demo$RegionLængstTid <- gsub("¿", "ø", demo$RegionLængstTid)
+demo$RegionLængstTid <- gsub("¾", "ø", demo$RegionLængstTid)
+demo$RegionLængstTid <- gsub("¯", "Ø", demo$RegionLængstTid)
+
+
+# same for dialekt
+demo$Dialekt <- gsub("¾", "æ", demo$Dialekt)
+demo$Dialekt <- gsub("¿", "ø", demo$Dialekt)
+demo$Dialekt <- gsub("¯", "ø", demo$Dialekt)
+demo$Dialekt <- gsub("Œ", "å", demo$Dialekt)
+demo$Dialekt <- gsub("", "å", demo$Dialekt)
+
+# Change tolower to make identical
+demo$Dialekt <- tolower(demo$Dialekt)
+
+
+# change answer to english in biligual
+demo$Bilingual <- ifelse(demo$Bilingual == "Ja", "Yes", "No")
+
+
+# make correct classes in each col
+
+demo$SubjectID <- as.factor(demo$SubjectID)
+demo$Gender <- as.factor(demo$Gender)
+demo$HighestEducation <- as.factor(demo$HighestEducation)
+demo$UnderUddannelse <- as.factor(demo$UnderUddannelse)
+demo$Ordblindhed <- as.factor(demo$Ordblindhed)
+demo$AgeAtDiagnosis <- as.numeric(demo$AgeAtDiagnosis)
+demo$Hørevanskeligheder <- as.factor(demo$Hørevanskeligheder)
+demo$Fødeby <- as.factor(demo$Fødeby)
+demo$RegionLængstTid <- as.factor(demo$RegionLængstTid)
+demo$Dialekt <- as.factor(demo$Dialekt)
+demo$Bilingual <- as.factor(demo$Bilingual)
+demo$Andetsprog <- as.factor(demo$Andetsprog)
+demo$LvlFremmedsprogDKNO <- as.factor(demo$LvlFremmedsprogDKNO)
+
+write.csv(demo, "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/demodata_clean.csv")
+
+
+```
+
+Load the clean demo data here
+
+```{r}
+demo <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/demodata_clean.csv")
+```
+
+
+
+*INTER-RATER RELIABILITY*
+
+
+Before starting the analysis, we need to load the specific files that were coded more than once for the calculation of inter-rater reliability.
+
+
+```{r}
+#install.packages("irr")
+library(irr)
+
+# Helle & MM
+
+# Their overlapping files
+
+HelMM <- df %>% 
+  filter(
+    SubjectID == "D_7_079" |SubjectID == "D_8_072" |SubjectID == "D_8_080" |SubjectID == "D_4_068"
+  )
+
+Hel <- HelMM %>%
+  filter(
+    Rater == "hel"
+  )
+
+MM <- HelMM %>%
+  filter(
+    Rater == "mm"
+  )
+
+Hel <- Hel %>% 
+  rename(
+    CorrectH = Correct
+  )
+
+Hel$CorrectM <- MM$Correct
+
+Hel$Same <- (Hel$CorrectH == Hel$CorrectM)
+
+Hel$Same <- ifelse(Hel$Same == TRUE, 1, 0)
+
+sum(Hel$Same, na.rm = T)/length(Hel$Same)
+
+## Agreement percentage: 82.55%
+
+# Cohens kappa:
+kappa2(Hel[c('CorrectH', 'CorrectM')], "unweighted")
+
+# Kappa = 0.628, p = 0. So not the best agreement, but not due to chance.
+```
+
+
+```{r}
+# Helle & Andreas
+
+AndHel <- df %>% 
+  filter(
+    SubjectID == "D_6_038" | SubjectID == "D_6_046" | SubjectID == "D_6_054" | SubjectID == "D_6_062"
+  )
+
+And <- AndHel %>% 
+  filter(
+    Rater == "and"
+  )
+
+Hel <- AndHel %>% 
+  filter(
+    Rater == "hel"
+  )
+
+And <- And %>% 
+  rename(
+    CorrectA = Correct
+  )
+
+And$CorrectH <- Hel$Correct
+
+And$Same <- (And$CorrectA == And$CorrectH)
+
+sum(And$Same, na.rm = T)/length(And$Same)
+
+# Agreement pecentage: 88.02%
+
+# Cohens kappa:
+kappa2(And[c('CorrectA', 'CorrectH')], "unweighted")
+
+# Kappa = 0.761, p = 0.
+
+```
+
+
+```{r}
+# Seb og And
+
+Seb <- df %>% 
+  filter(
+    SubjectID == "D_1_001" | SubjectID == "D_1_009" | SubjectID == "D_1_017" | SubjectID == "D_1_025" | SubjectID == "D_4_052" | SubjectID == "D_4_060" | SubjectID == "D_5_005" | SubjectID == "D_5_013" | SubjectID == "D_5_021" | SubjectID == "D_5_037") %>% 
+  filter(
+    Rater == "seb"
+  )
+
+Seb <- Seb[order(Seb$SubjectID, Seb$Trialnumber), ]  # Sebs rows are scrambled for some reason
+
+And <- df %>% 
+  filter(
+    SubjectID == "D_1_001" | SubjectID == "D_1_009" | SubjectID == "D_1_017" | SubjectID == "D_1_025" | SubjectID == "D_4_052" | SubjectID == "D_4_060" | SubjectID == "D_5_005" | SubjectID == "D_5_013" | SubjectID == "D_5_021" | SubjectID == "D_5_037"
+  ) %>% 
+  filter(
+    Rater == "and"
+  )
+
+
+Seb <- Seb %>% 
+  rename(
+    CorrectS = Correct
+  )
+
+
+
+Seb$CorrectA <- And$Correct
+
+Seb$Same <- (Seb$CorrectS == Seb$CorrectA)
+
+sum(Seb$Same, na.rm = T)/length(Seb$Same)
+
+# Agreement percentage: 80.72%
+
+# Cohens kappa
+kappa2(Seb[c('CorrectS', 'CorrectA')], "unweighted")
+
+# Kappa = 0.619, p = 0
+
+
+
+
+# A total do-over with only the files that will be used in the analysis of trimmed dataset
+
+Seb <- df_wdups %>% 
+  filter(
+    SubjectID == "D_5_005" | SubjectID == "D_5_013" | SubjectID == "D_5_021" | SubjectID == "D_5_037") %>% 
+  filter(
+    Rater == "seb"
+  )
+
+Seb <- Seb[order(Seb$SubjectID, Seb$Trialnumber), ]  # Sebs rows are scrambled for some reason
+
+And <- df_wdups %>% 
+  filter(
+    SubjectID == "D_5_005" | SubjectID == "D_5_013" | SubjectID == "D_5_021" | SubjectID == "D_5_037"
+  ) %>% 
+  filter(
+    Rater == "and"
+  )
+
+
+Seb <- Seb %>% 
+  rename(
+    CorrectS = Correct
+  )
+
+
+
+Seb$CorrectA <- And$Correct
+
+Seb$Same <- (Seb$CorrectS == Seb$CorrectA)
+
+sum(Seb$Same, na.rm = T)/length(Seb$Same)
+
+# Agreement percentage: 82.55%
+
+# Cohens kappa
+kappa2(Seb[c('CorrectS', 'CorrectA')], "unweighted")
+
+# Kappa = 0.65, p = 0
+
+```
+
+```{r}
+# Dev and Shi
+
+Dev <- df %>% 
+  filter(Rater == "dev")
+
+Shi <- df %>% 
+  filter(Rater == "shi")
+
+devsubs <- unique(Dev$SubjectID)
+shisubs <- unique(Shi$SubjectID)
+
+Dev <- Dev %>% 
+  filter(
+    SubjectID %in% devsubs & SubjectID %in% shisubs
+  )
+
+Shi <- Shi %>% 
+  filter(
+    SubjectID %in% devsubs & SubjectID %in% shisubs
+  )
+
+Dev <- Dev %>%
+  rename(
+    CorrectD = Correct
+  )
+
+Dev$CorrectS <- Shi$Correct
+
+Dev$Same <- (Dev$CorrectD == Dev$CorrectS)
+
+sum(Dev$Same, na.rm = T)/length(Dev$Same)
+
+# Agreement percentage: 46.55%.
+# But Shi was EXTREMELY harsh. Gave incorrect ratings and then wrote transcriptions that were identical to the target pronunciation in several cases
+
+
+kappa2(Dev[c('CorrectD', 'CorrectS')], "unweighted")
+
+# Kappa = 0.0519, p < 0.001
+
+
+# Was Shi very strict?
+
+shi <- df %>% 
+  filter(
+    Rater == "shi"
+  )
+
+shi$Correct <- as.numeric(shi$Correct)
+
+dev <- df %>% 
+  filter(
+    Rater == "dev"
+  )
+
+dev$Correct <- as.numeric(dev$Correct)
+
+sum(shi$Correct, na.rm = T)/length(shi$Correct)  # Shi rated 2.5% of the words as correct
+
+sum(dev$Correct, na.rm = T)/length(dev$Correct)  # Dev rated 52.4% as the words as correct
+
+# It is VERY unlikely, that the participants given to Shi for rating were SO MUCH worse than the ones given to Dev.
+
+```
+
+Removing duplicates from the Interrater reliability calculations
+
+```{r}
+# Keeping everything that is not...
+
+df <- df %>% 
+  filter(
+    !(
+    (Rater == "hel" & SubjectID == "D_7_079") |
+    (Rater == "hel" & SubjectID == "D_8_072") |
+    (Rater == "hel" & SubjectID == "D_8_080") |
+    (Rater == "hel" & SubjectID == "D_4_068") |
+    (Rater == "and" & SubjectID == "D_6_038") |
+    (Rater == "and" & SubjectID == "D_6_046") |
+    (Rater == "and" & SubjectID == "D_6_054") |
+    (Rater == "and" & SubjectID == "D_6_062") |
+    (Rater == "seb" & SubjectID == "D_1_001") |
+    (Rater == "seb" & SubjectID == "D_1_009") |
+    (Rater == "seb" & SubjectID == "D_1_017") |
+    (Rater == "seb" & SubjectID == "D_1_025") |
+    (Rater == "seb" & SubjectID == "D_4_052") |
+    (Rater == "seb" & SubjectID == "D_4_060") |
+    (Rater == "seb" & SubjectID == "D_5_005") |
+    (Rater == "seb" & SubjectID == "D_5_013") |
+    (Rater == "seb" & SubjectID == "D_5_021") |
+    (Rater == "seb" & SubjectID == "D_5_037"))
+  )
+
+#D_4_052, D_4_060, D_5_005, D_5_013, D_5_021, D_5_037
+
+# Taking care of dev and shi
+
+dev <- df %>% 
+  filter(
+    Rater == "dev"
+  )
+
+shi <- df %>% 
+  filter(
+    Rater == "shi"
+  )
+
+devsubs <- unique(dev$SubjectID)
+shisubs <- unique(shi$SubjectID)
+
+dev <- dev %>% 
+  filter(
+    SubjectID %in% devsubs & SubjectID %in% shisubs
+  )
+
+overlap <- unique(dev$SubjectID)
+  
+  
+df <- df %>% 
+  filter(
+    ! ( 
+      (Rater == "dev" & SubjectID %in% overlap[1:8]) |
+      (Rater == "shi" & SubjectID %in% overlap[9:16]) )
+  )
+
+
+
+# We save this data without duplicates 
+
+write.csv(df, "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_full_nodups.csv")
+
+
+``` 
+
+
+
+Load data quickly, no duplicates!
+```{r}
+df <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_full_nodups.csv")
+```
+
+
+
+
+
+*DATA VISUALISATION*
+
+Let's see if it looks like we have some effects just bye eye balling the data. Make a box plot with ggplot: colour by Language and facetwrap by Native language. Find some way to seperate them by number of syllables as well. Also: How do we calculate correct percentage within the ggplot?
+
+```{r}
+df$Correct <- as.numeric(df$Correct)
+
+
+# Plot 1, by Native language and target language
+
+plot1 <- df %>% na.omit() %>% 
+  ggplot(aes(x = Language, y = Correct, fill = Language)) +
+  geom_bar(stat = 'summary', fun.y = mean) +
+  geom_errorbar(stat = "summary", fun.data = mean_se , width=0.5) +
+  labs(x = "Language", y = "Mean Correct Percentage") +
+  ggtitle("Mean correct percentage by Native language") +
+  facet_wrap(.~NativeLanguage)
+
+plot1
+
+
+# Plot 2, by native language, target language, and nsyl
+
+plot2 <- df %>% na.omit() %>%
+  ggplot(aes(x = NumberSyllables, y = Correct, fill = Language)) +
+  geom_bar(stat = 'summary', fun.y = mean, position = "dodge", width = 0.7) +
+  geom_errorbar(stat = "summary", fun.data = mean_se , width=0.7, position = "dodge") +
+  facet_wrap(.~NativeLanguage) +
+  labs(x = "Number of Syllables", y = "Mean Correct Percentage") +
+  ggtitle("Mean correct percentage by number of syllables") +
+  scale_x_continuous(labels=as.character(df$NumberSyllables),breaks= df$NumberSyllables)
+
+plot2
+
+
+library(gridExtra)
+
+grid.arrange(plot1, plot2, nrow = 1)
+
+
+```
+
+
+
+
+
+
+
+*DATA ANALYSIS*
+
+OBS: See Data analysis and visualisation Rmd for the actual data analysis.
+
+
+We need to merge the demographic data with the experimental data
+
+```{r}
+demo <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/demodata_clean.csv")
+
+# The dialekt col needs some extra cleaning
+
+unique(demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "århusiansk", "aarhusiansk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "aarhusiansk ", "aarhusiansk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "østjydsk", "østjysk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "risdansk", "rigsdansk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "risdansk, jysk", "jysk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "risdansk med lidt nordjysk", "nordjysk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "sømderjysk", "sønderjysk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "\"horsensiansk\", udtaler ikke d'er særlig tungt og siger hååårsens og ikke horsens", "horsensiansk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "sørlandsk ", "sørlandsk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "bergensk ", "bergensk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "standard østlandsk", "østlandsk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "nordnorsk ", "nordnorsk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "vestlandsk ", "vestlandsk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "vestlandsk/bergensk", "bergensk", demo$Dialekt)
+
+demo$Dialekt <- ifelse(demo$Dialekt == "østlandsk ", "østlandsk", demo$Dialekt)
+
+unique(demo$Dialekt)
+
+write.csv(demo, "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/demodata_clean.csv")
+
+```
+
+
+
+Testing if we can merge
+
+```{r}
+test <- merge(df, demo, by = "SubjectID")
+
+test2 <- df %>% group_by(SubjectID) %>% mutate(rownumber = row_number())
+
+max(test2$rownumber)
+
+```
+
+
+
+
+```{r}
+# We need to summarise the Need for Cognition scores by summing them all - some of them are "negated questions"
+demo <- demo %>% select(- X.1, - X)
+
+# We subtract 5 from all individual NfC scores in order to get a score centred at 0. In this way we are able to translate "very strong disagreement of -4" on a negated question to a strong agreement of 4 on the positively framed question.
+
+for(i in 14:31) {
+  demo[,i] <- demo[,i] - 5
+}
+
+# Next step is to make the summed column where negatively framed questions are times -1:
+# Cols to negate are 16, 17, 18, 20, 21, 22, 25, 29, 30
+
+demo$NfC <- demo[,14] + demo[,15] - demo[,16] - demo[,17] - demo[,18] + demo[,19] - demo[,20] - demo[,21] - demo[,22] + demo[,23] + demo[,24] - demo[,25] + demo[,26] + demo[,27] + demo[,28] - demo[,29] - demo[,30] + demo[,31]
+
+
+write.csv(demo, "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/demodata_clean.csv")
+
+
+```
+Load the clean demo data:
+
+```{r}
+demo <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/demodata_clean.csv")
+
+# Bind it with the age col from the updated dataset
+demo_age <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Baggrundsskema_HelleAndreas_NWR3_updated_w_age.csv")
+
+demo_age <- demo_age %>%
+  rename(SubjectID = Subjekt.ID, Age = Alder) %>% 
+  select( SubjectID, Age)
+
+demo <- merge(demo, demo_age, by = "SubjectID")
+
+demo <- demo %>% select(-X) %>% distinct()
+
+```
+
+
+
+The IRR between Dev and Shi is too low. We therefore use only Dev's data.
+We must look at the demo data for Dev's participants in order to pick out an equal number of Danish participants who have matching demographics.
+Important variables are
+Gender - equal number of each
+Bilingual - are there any in Dev's data?
+LvlFremmedsprogDKNO - no significant difference in the means of the two groups
+Dialekt - similar number of different dialects in each group.
+
+A link to propensity score matching tutorial:
+https://sejdemyr.github.io/r-tutorials/statistics/tutorial8.html
+
+
+
+```{r}
+# Load the df with duplicates to get ALL of Dev's data:
+df_wdups <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_full.csv")
+
+dev <- df_wdups %>% filter(Rater == "dev")
+
+length(unique(dev$SubjectID))    # Dev has 53 subjects
+
+
+# We need a df of all the subjects that were rated twice, but we only want them once in our df. Therefore we extract them from the df without dups.
+
+dups <- df %>% filter(
+    (SubjectID == "D_7_079") |
+    (SubjectID == "D_8_072") |
+    (SubjectID == "D_8_080") |
+    (SubjectID == "D_4_068") |
+    (SubjectID == "D_6_038") |
+    (SubjectID == "D_6_046") |
+    (SubjectID == "D_6_054") |
+    (SubjectID == "D_6_062") |
+    (SubjectID == "D_5_005") |
+    (SubjectID == "D_5_013") |
+    (SubjectID == "D_5_021") |
+    (SubjectID == "D_5_037")
+    )
+
+
+
+# Bind dev and dups together using rbind
+dev <- dev %>% select(-X)
+dups <- dups %>% select(-X, -X.1)  
+
+devdups <- rbind(dev,dups)
+
+devdups <- merge(devdups, demo, by = "SubjectID")
+
+# NB: We do not have demographical background for all participants - we are missing info from 3 subjects in this df. This means that we only have 10 participants from dups and 51 participants from dev. FX we did not have for D_7_079 and D_8_080 which were in the overlap between Helle and MM. Consequently, the IRR calculated between Helle and MM is calculated from 2 files that are actually in the data, and 2 files that we lost from the dataset here.
+
+# Try and make the matched data using the MatchIt() function.
+
+#install.packages("MatchIt")
+
+library(MatchIt)
+
+
+
+# Creating a new native language col with values 0 for Danish and 1 for Norwegian
+devdups$numNative <- ifelse(devdups$NativeLanguage == "Danish", 0, 1)
+
+# Creating model for matching
+mod_match1 <- matchit(numNative ~  as.factor(Gender) + Age + LvlFremmedsprogDKNO, method = "nearest", data = devdups)
+
+# Creating matched df from the matching model
+devdups_m <- match.data(mod_match1)
+
+length(unique(filter(devdups_m, NativeLanguage == "Danish")$SubjectID))  # We got 10 of each
+length(unique(filter(devdups_m, NativeLanguage == "Norwegian")$SubjectID))  # We got 10 of each
+
+
+# Creating lists of the unique subjects that are in our matched data in order to avoid them
+uniquedevdups_subs <- unique(devdups_m$SubjectID)
+
+remaining_danish <- df %>% filter(NativeLanguage == "Danish") %>% filter(! (SubjectID %in% uniquedevdups_subs))
+
+remaining_dev <- dev %>%  filter(! (SubjectID %in% uniquedevdups_subs))
+
+
+# rbind the two:
+remaining_danish <- remaining_danish %>% select(-X, -X.1)
+
+remaining_df <- rbind(remaining_danish, remaining_dev)
+
+# Merge with the demo data
+
+remaining_df <- merge(remaining_df, demo, by = "SubjectID")
+
+length(unique(filter(remaining_df, NativeLanguage == "Danish")$SubjectID))  # We got 65 danish participants left
+length(unique(filter(remaining_df, NativeLanguage == "Norwegian")$SubjectID))   # we got 41 norwegian participants left
+
+
+# Creating a new native language col with values 0 for Danish and 1 for Norwegian
+remaining_df$numNative <- ifelse(remaining_df$NativeLanguage == "Danish", 0, 1)
+
+# Create model for matching again:
+
+mod_match2 <- matchit(numNative ~ as.factor(Gender) + Age + LvlFremmedsprogDKNO, method = "nearest", data = remaining_df)
+
+# Creating the remaining matches
+remaining_m <- match.data(mod_match2)
+
+# Are there an equal amount of participants in each group?
+length(unique(filter(remaining_m, NativeLanguage == "Danish")$SubjectID))  # We got 41 of each
+length(unique(filter(remaining_m, NativeLanguage == "Norwegian")$SubjectID))  # We got 41 of each
+
+# We have 10+41=51 subjects IN EACH GROUP
+
+
+
+# We rbind the 2 matched up df's, so this becomes the df downsampled
+# First, we remove the subclass col because it fucks everything up...
+
+devdups_m <- devdups_m %>% select(-subclass)
+remaining_m <- remaining_m %>% select(-subclass)
+
+df_ds <- rbind(devdups_m, remaining_m)
+
+# Removing double rows
+df_ds <- df_ds %>% distinct()
+
+
+# We write a csv file with the down sampled data:
+#write.csv(df_ds, "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_downsampled.csv")
+
+# The matching algorithm did not match participants in the same way, so I load Helles now
+
+df_ds <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_downsampledHelle.csv")
+
+
+# Now we must check if the three parameters we created matches from are really not significantly different between the 2 groups.
+
+
+# Testing if mean age is the same:
+mAge <- lm(Age ~ NativeLanguage, data = df_ds)
+
+summary(mAge)
+# Danes mean age, 22.82, Norwegians mean age 23.82. The difference is significant (which is also the case in the full dataset), but the difference is not very large :)
+
+
+
+# Testing if Gender predicts native language group:
+
+mGender <- glm(numNative ~ Gender, data = df_ds)
+
+summary(mGender)   # No significant diff between Males and Females which by far the most people selected.
+boot::inv.logit(0.5)  # Prop of being Danish if you are female: 0.622
+boot::inv.logit(0.5 + 0.014286)  # Prop of being Danish if you are male: 0.626
+
+# A bit weird that they dont sum to 1, but we guess it's because of the people who replied "other".
+
+
+# Testing if Lvl fremmedsprog is the same:
+mFrem <- lm(LvlFremmedsprogDKNO ~ NativeLanguage, data = df_ds)
+
+summary(mFrem)
+# There is a significant difference here - mean self reported lvl of foreign language for Danes is 2.216, for Norwegians 1.941. (Difference of -0.27451). But this difference also exist in the full data set, in fact in the full data, it is a bit larger, so with the propensity score matching, we ensured that it did not become worse. It actually became a bit better.
+
+
+# Testing how many unique dialects are in each NatLan group:
+
+length(unique(filter(df_ds, NativeLanguage == "Danish")$Dialekt))  # 16 different dialects (out of 18 different danish dialects)
+length(unique(filter(df_ds, NativeLanguage == "Norwegian")$Dialekt))  # 19 different dialects (out of 29 different norwegian dialects)
+
+# So there are roughly an equal number of different dialects now which we are very happy about! :)
+
+
+```
+
+
+
+Create models for Analysis. OBS: See Analysis and Visualisation Rmd for the actual models used in the thesis.
+
+
+```{r}
+# Merge full data with no dups with demo data
+df <- merge(df, demo, by = "SubjectID")
+
+#write.csv(df, "C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_full_nodupsWdemo.csv")
+df <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_full_nodupsWdemo.csv")
+
+
+df_ds <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_downsampledHelle.csv")
+
+library(lmerTest)
+
+df_ds$Correct <- as.factor(df_ds$Correct)
+df_ds$NativeLanguage <- as.factor(df_ds$NativeLanguage)
+df_ds$SubjectID <- as.factor(df_ds$SubjectID)
+df_ds$Nonword <- as.factor(df_ds$Nonword)
+
+
+
+```
+
+
+Hypothesis 1:
+```{r}
+# We make the dataset with only danish words for the danes and norwegian words for the norwegians
+dfh1ds <- df_ds %>% 
+  filter((NativeLanguage == "Danish" & Language == "D") |
+         (NativeLanguage == "Norwegian" & Language == "N") )
+
+# The model:
+
+mh1 <- lme4::glmer(Correct ~ NativeLanguage + (1 | SubjectID) + (1 | Nonword), family = binomial, data = dfh1)
+
+summary(mh1) # No significant effect
+
+
+# A model with random effects ala Fabio: Does not work because Nonword is not a fixed effect
+
+mh1.2 <- lme4::glmer(Correct ~ NativeLanguage + (1 + Nonword | SubjectID), family = binomial, data = dfh1)
+
+
+#df_ds <- read.csv("C:/Users/andre/OneDrive - Aarhus universitet/Cognitive Science/Bachelor Project/Data/data_downsampledHelle.csv")
+
+
+#df_ds$NativeLanguage <- as.factor(df_ds$NativeLanguage)
+
+df_ds$Correct <- as.numeric(df_ds$Correct)
+
+ploth1 <- dfh1 %>% na.omit() %>% 
+  ggplot(aes(x = NativeLanguage, y = Correct, fill = NativeLanguage)) + 
+  geom_bar(stat='summary', fun.y = mean) + 
+  geom_errorbar(stat = 'summary', fun.data = mean_se, width=0.5)
+
+ploth1
+
+```
+
+Hypothesis 2:
+
+```{r}
+df_ds$Correct <- as.factor(df_ds$Correct)
+df_ds$NativeLanguage <- as.factor(df_ds$NativeLanguage)
+df_ds$Language <- as.factor(df_ds$Language)
+df_ds$SubjectID <- as.factor(df_ds$SubjectID)
+df_ds$Nonword <- as.factor(df_ds$Nonword)
+df_ds$NumberSyllables <- as.numeric(df_ds$NumberSyllables)
+
+# The model ran forever if random slope for nsyl by subject was included.
+
+mh2 <- lme4::glmer(Correct ~ NumberSyllables + (1 | Nonword) + (1 + NumberSyllables | SubjectID), family = binomial, data = df_ds)
+
+summary(mh2)
+
+
+# Make plot like in ExpMeth1 with titanic portfolio
+# For probability of correct as function of number of syllables
+
+
+
+
+
+```
+
+
+Hypothesis 3:
+
+```{r}
+# We create a new column indicating whether the target language of that trial was your own native language
+df_ds$OwnLanguage <- ifelse((df_ds$NativeLanguage == "Danish" & df_ds$Language == "D") | (df_ds$NativeLanguage == "Norwegian" & df_ds$Language == "N"), 1, 0)
+
+df_ds$OwnLanguage <- as.factor(df_ds$OwnLanguage)
+
+# H3 model 1 with English included 
+mh31 <- glmer(Correct ~ NativeLanguage * Language + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt), family = binomial, data = df_ds, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+
+# To test the random effect structure Fab suggested on a model that runs on full data:
+
+#mh31test <- glmer(Correct ~ NativeLanguage * Language + (1 + Nonword | SubjectID) + (1 | Dialekt), family = binomial, data = df_ds, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+summary(mh31)
+
+
+# Plotting the effects:
+#install.packages("effects")
+library(effects)
+
+plot(effects::allEffects(mh31))  # Here we can see, that the differences between target languages do not differ across NatLan groups
+
+# Trying to get pairwise comparisons:
+
+#install.packages("emmeans")
+library(emmeans)
+
+summary(emmeans(mh31, c("NativeLanguage", "Language"), contr = "revpairwise"), infer = TRUE)$contrast
+
+
+
+
+# The English non-words are not super comparable to the Danish/Norwegian ones - they did not have as many syls, so were generally easier.
+
+dfh3 <- df_ds %>% filter(! Language == "E")
+
+# H3 model 2 without English in own language 0
+mh32 <- glmer(Correct ~ NativeLanguage * Language + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt) + (1 | LvlFremmedsprogDKNO), family = binomial, data = dfh3, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+summary(mh32)
+
+
+
+# Plotting the effects but with no english:
+plot(effects::allEffects(mh32))
+
+# Pairwise comparisons without english:
+summary(emmeans(mh32, c("NativeLanguage", "Language"), contr = "revpairwise"), infer = TRUE)$contrast
+
+
+
+# Note to self:
+# Vi vil gerne se på om forskellen Danskere på dansk - Danskere på norsk er forskellig fra Nordmænd på dansk - Nordmænd på norsk.
+# Så er der en credible forskel på Danish D - Danish N (0.5046) og Norwegian N - Norwegian D (0.7277)?
+# Nej, for forskellen ml dem er 0.2231, men begge kontraster har en SE på 0.403 (Confidence level 0.95), så der er for stort overlap i deres Standard Error barrer.
+
+```
+
+
+Hypothesis 4:
+
+```{r}
+df_ds$NumberSyllables <- as.factor(df_ds$NumberSyllables)
+
+# Creating the 3-way interaction model with english:
+
+mh4E <- glmer(Correct ~ 0 + NativeLanguage * Language * NumberSyllables + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt) + (1 | LvlFremmedsprogDKNO), family = binomial, data = df_ds, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+summary(mh4E)
+
+
+# Pairwise comparison to be able to see the estimates for different contrasts:
+
+summary(emmeans(mh4E, c("NativeLanguage", "Language", "NumberSyllables"), contr = "revpairwise"), infer = TRUE)$contrast
+
+
+# Plotting effects:
+#plot(effects::allEffects(mh4E))
+
+
+# Creating same model but without english non-words:
+
+dfh3$NumberSyllables <- as.factor(dfh3$NumberSyllables)
+
+mh4nE <- glmer(Correct ~ 0 + NativeLanguage * Language * NumberSyllables + (1 | SubjectID) + (1 | Nonword) + (1 | Dialekt) + (1 | LvlFremmedsprogDKNO), family = binomial, data = dfh3, control = glmerControl(optimizer = "nloptwrap", calc.derivs = FALSE))
+
+#plot(effects::allEffects(mh4nE))
+summary(mh4nE)
+
+summary(emmeans(mh4nE, c("NativeLanguage", "Language", "NumberSyllables"), contr = "revpairwise"), infer = TRUE)$contrast
+
+
+
+
+```
+
+
+```{r}
+boot::inv.logit(-2.164)
+```
+
+
+
